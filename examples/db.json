@@ -1,0 +1,43 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "title": "Introduction to JSON Server",
+      "author": "Alice"
+    },
+    {
+      "id": 2,
+      "title": "Building RESTful APIs with json-server",
+      "author": "Bob"
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "body": "Great article!",
+      "postId": 1
+    },
+    {
+      "id": 2,
+      "body": "Very helpful for mock APIs.",
+      "postId": 2
+    }
+  ],
+  "profile": {
+    "name": "Alice",
+    "age": 323,
+    "job": {
+      "title": "Developer",
+      "company": {
+        "name": "Tech Corp",
+        "address": {
+          "city": "Tokyo",
+          "zip": 10001
+        }
+      }
+    }
+  },
+  "smth": {
+    "job": "random job"
+  }
+}

@@ -1,0 +1,167 @@
+Here is the comprehensive guide formatted in Markdown. You can save this as a file named `SETUP_GUIDE.md` or keep it in your notes to track your progress.
+
+---
+
+# Open Source TypeScript Tool: Launch Checklist
+
+This guide outlines the infrastructure required to build, test, and automate the publishing of a professional TypeScript library.
+
+## 1\. Project Configuration
+
+Set up the build system to support both CommonJS (Node) and ESM (Modern Bundlers).
+
+- [ ] **Initialize Project:** `npm init -y`
+- [ ] **Install TypeScript:** `npm install -D typescript tslib`
+- [ ] **Configure `tsconfig.json`:** Ensure strict mode is on.
+  ```json
+  {
+    "compilerOptions": {
+      "target": "ES2020",
+      "module": "commonjs",
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true
+    }
+  }
+  ```
+- [ ] **Setup Builder (tsup):** The easiest zero-config bundler for TS libraries.
+  - _Install:_ `npm install -D tsup`
+  - _Command:_ `tsup src/index.ts --format cjs,esm --dts`
+
+## 2\. Code Quality (Linting & Formatting)
+
+Ensure code consistency before it hits the repository.
+
+- [ ] **Install Tools:**
+  ```bash
+  npm install -D eslint prettier eslint-config-prettier
+  ```
+- [ ] **Setup Husky & Lint-staged:** This forces checks before a commit succeeds.
+  ```bash
+  npx husky-init && npm install
+  npm install -D lint-staged
+  ```
+- [ ] **Configure `package.json`:**
+  ```json
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+  ```
+
+## 3\. Testing
+
+- [ ] **Install Vitest:** (Faster alternative to Jest for TypeScript)
+  ```bash
+  npm install -D vitest
+  ```
+- [ ] **Add Script:** Add `"test": "vitest"` to your `package.json`.
+- [ ] **Write Tests:** Ensure your main exports have unit tests.
+
+## 4\. CI/CD Pipeline (GitHub Actions)
+
+Create a file at `.github/workflows/ci.yml`. This runs on every Pull Request to ensure the build and tests pass.
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Linting
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Run Tests
+        run: npm run test
+```
+
+## 5\. Automated Publishing (Changesets)
+
+Do not publish manually. Use **Changesets** to handle versioning and changelogs.
+
+- [ ] **Install Changesets:**
+
+  ```bash
+  npm install -D @changesets/cli
+  npx changeset init
+  ```
+
+- [ ] **Workflow:**
+  1.  Make a code change.
+  2.  Run `npx changeset` locally to declare what changed (Major/Minor/Patch).
+  3.  Push code.
+
+- [ ] **GitHub Action for Release:**
+      Create `.github/workflows/release.yml`. This creates a "Version Packages" PR automatically. When you merge that PR, it publishes to NPM.
+
+  ```yaml
+  name: Release
+
+  on:
+    push:
+      branches:
+        - main
+
+  concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+  jobs:
+    release:
+      name: Release
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-node@v4
+          with:
+            node-version: 18
+            cache: 'npm'
+
+        - run: npm ci
+        - run: npm run build
+
+        - name: Create Release Pull Request or Publish
+          uses: changesets/action@v1
+          with:
+            # This builds the command to publish to NPM
+            publish: npm publish
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+  ```
+
+## 6\. Final Polish
+
+- [ ] **README.md:** Include Installation, Usage, and Badges.
+- [ ] **LICENSE:** Add an MIT License file.
+- [ ] **NPM Token:** Generate an Automation Token on npmjs.com and add it to your GitHub Repo Settings \> Secrets (`NPM_TOKEN`).
+
+---
+
+### Next Step
+
+Would you like me to explain how to generate the **NPM Token** mentioned in the "Final Polish" section and where exactly to paste it in GitHub?
