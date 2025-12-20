@@ -3,8 +3,8 @@ import { DataSource } from '../datasource/DataSource';
 import type { ResourceMap } from '../types';
 import * as singletonHandlers from './handlers/singletonHandlers';
 import * as collectionHandlers from './handlers/collectionHandlers';
-import { watch, WatchEventType } from 'node:fs';
 import { Store } from '../datastore/dataStore';
+import { watch } from 'chokidar';
 
 export class Server {
   private app: Express;
@@ -40,14 +40,12 @@ export class Server {
   }
 
   private watchFile() {
-    watch(this.fileName, (eventType: WatchEventType, filename) => {
-      if (eventType === 'change') {
-        console.log(`[${filename}]: data changed, reloading...`);
-        // this.data = this.dataSource.load();
-        this.state.set(this.dataSource.load());
-        this.resourceMap = this.dataSource.parse(this.state.get());
-        console.log(`[${filename}]: successfully reloaded.`);
-      }
+    watch(this.fileName).on('change', (path) => {
+      console.log(`[${path}]: data changed, reloading...`);
+      // this.data = this.dataSource.load();
+      this.state.set(this.dataSource.load());
+      this.resourceMap = this.dataSource.parse(this.state.get());
+      console.log(`[${path}]: successfully reloaded.`);
     });
   }
 
