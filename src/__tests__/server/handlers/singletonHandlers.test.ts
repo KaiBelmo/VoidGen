@@ -9,11 +9,14 @@ describe('Singleton Handlers', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let responseObject: any;
-  let data: any;
+
+  let storeData: any;
+  let mockStore: any;
+
   const resourceName = 'settings';
 
   beforeEach(() => {
-    data = {
+    storeData = {
       settings: {
         theme: 'dark',
         notifications: true,
@@ -21,27 +24,33 @@ describe('Singleton Handlers', () => {
       },
     };
 
+    mockStore = {
+      get: jest.fn(() => storeData),
+      set: jest.fn((newState) => {
+        storeData = newState;
+      }),
+    };
+
     mockRequest = {};
     mockResponse = {
-      statusCode: 0,
+      status: jest.fn().mockReturnThis(),
       json: jest.fn().mockImplementation((result) => {
         responseObject = result;
         return mockResponse as Response;
       }),
-      status: jest.fn().mockReturnThis(),
     };
   });
 
   describe('getSingleton', () => {
     it('should return the singleton data', () => {
-      const handler = getSingleton(data, resourceName);
+      const handler = getSingleton(mockStore, resourceName);
       handler(mockRequest as Request, mockResponse as Response);
 
-      expect(mockResponse.json).toHaveBeenCalledWith(data.settings);
+      expect(mockResponse.json).toHaveBeenCalledWith(storeData.settings);
     });
 
     it('should return undefined for non-existent resource', () => {
-      const handler = getSingleton(data, 'nonExistent');
+      const handler = getSingleton(mockStore, 'nonExistent');
       handler(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.json).toHaveBeenCalledWith(undefined);
@@ -49,29 +58,27 @@ describe('Singleton Handlers', () => {
   });
 
   describe('putSingleton', () => {
-    it('should replace the entire singleton data when keys match', () => {
+    it('should replace the entire singleton when schema matches', () => {
       const newSettings = {
         theme: 'light',
         notifications: false,
-        fontSize: 20, // must include ALL keys to match schema
+        fontSize: 20,
       };
 
       mockRequest.body = newSettings;
 
-      const handler = putSingleton(data, resourceName);
+      const handler = putSingleton(mockStore, resourceName);
       handler(mockRequest as Request, mockResponse as Response);
 
-      expect(data.settings).toEqual(newSettings);
+      expect(storeData.settings).toEqual(newSettings);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(responseObject).toEqual({ received: newSettings });
     });
 
-    it('should reject updates when keys do not match schema', () => {
-      const invalidUpdate = { theme: 'light' }; // missing keys
+    it('should reject updates when schema does not match', () => {
+      mockRequest.body = { theme: 'light' };
 
-      mockRequest.body = invalidUpdate;
-
-      const handler = putSingleton(data, resourceName);
+      const handler = putSingleton(mockStore, resourceName);
       handler(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
@@ -80,58 +87,55 @@ describe('Singleton Handlers', () => {
       });
     });
 
-    it('should reject creation when resource does not exist', () => {
-      const newData: any = {};
-      const newSettings = { theme: 'light' };
+    it('should reject when resource does not exist', () => {
+      storeData = {}; // no settings key
 
-      mockRequest.body = newSettings;
+      mockRequest.body = { theme: 'light' };
 
-      const handler = putSingleton(newData, resourceName);
+      const handler = putSingleton(mockStore, resourceName);
       handler(mockRequest as Request, mockResponse as Response);
 
-      expect(newData[resourceName]).toBeUndefined(); // no creation
+      expect(storeData.settings).toBeUndefined();
       expect(mockResponse.status).toHaveBeenCalledWith(400);
     });
   });
+
   describe('patchSingleton', () => {
-    it('should partially update only existing keys', () => {
-      const update = { theme: 'light' };
+    it('should partially update existing keys only', () => {
+      mockRequest.body = { theme: 'light' };
 
-      mockRequest.body = update;
-
-      const handler = patchSingleton(data, resourceName);
+      const handler = patchSingleton(mockStore, resourceName);
       handler(mockRequest as Request, mockResponse as Response);
 
-      expect(data.settings.theme).toBe('light');
-      expect(data.settings.notifications).toBe(true);
-      expect(data.settings.fontSize).toBe(14);
-      expect(data.settings.language).toBeUndefined(); // no new keys allowed
+      expect(storeData.settings).toEqual({
+        theme: 'light',
+        notifications: true,
+        fontSize: 14,
+      });
 
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(responseObject).toEqual({ received: storeData.settings });
+    });
+
+    it('should ignore new fields', () => {
+      mockRequest.body = { language: 'en' };
+
+      const handler = patchSingleton(mockStore, resourceName);
+      handler(mockRequest as Request, mockResponse as Response);
+
+      expect(storeData.settings.language).toBeUndefined();
       expect(mockResponse.status).toHaveBeenCalledWith(200);
     });
 
-    it('should NOT add new fields', () => {
-      const update = { language: 'en' };
+    it('should NOT create resource if it does not exist', () => {
+      storeData = {};
 
-      mockRequest.body = update;
+      mockRequest.body = { theme: 'light' };
 
-      const handler = patchSingleton(data, resourceName);
+      const handler = patchSingleton(mockStore, resourceName);
       handler(mockRequest as Request, mockResponse as Response);
 
-      expect(data.settings.language).toBeUndefined(); // ignored
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-    });
-
-    it('should NOT create the resource if it does not exist', () => {
-      const newData: any = {};
-      const update = { theme: 'light' };
-
-      mockRequest.body = update;
-
-      const handler = patchSingleton(newData, resourceName);
-      handler(mockRequest as Request, mockResponse as Response);
-
-      expect(newData[resourceName]).toBeUndefined(); // no creation
+      expect(storeData.settings).toBeUndefined();
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(responseObject).toEqual({ received: undefined });
     });
