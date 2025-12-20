@@ -14,7 +14,6 @@ program
 program.action(() => {
   const opts = program.opts<CliArgs>();
   opts.port = parseInt(opts.port.toString(), 10);
-  console.log(opts);
   startApp(opts);
 });
 
