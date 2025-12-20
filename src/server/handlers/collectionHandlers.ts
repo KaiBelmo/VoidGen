@@ -1,18 +1,24 @@
 import { Request, Response } from 'express';
 import { isStructuralMatch, assignExistingKeys } from '../../utils/objectUtils';
+import { Store } from 'src/datastore/dataStore';
 
-export const getCollection = (items: any[]) => (_: Request, res: Response) => {
+export const getCollection = (state: Store, name: string) => (_: Request, res: Response) => {
+  const items = state.get()[name];
   res.json(items);
 };
 
-export const getCollectionItem = (items: any[]) => (req: Request, res: Response) => {
+export const getCollectionItem = (state: Store, name: string) => (req: Request, res: Response) => {
   const id = Number(req.params.id);
+  const items: Array<any> = state.get()[name];
   const item = items.find((i) => i.id === id);
   if (!item) return res.status(404).json({ error: 'Item not found' });
   res.json(item);
 };
 
-export const postCollection = (items: any[]) => (req: Request, res: Response) => {
+export const postCollection = (state: Store, name: string) => (req: Request, res: Response) => {
+  const currentState = state.get();
+  const items: Array<any> = currentState[name];
+
   if (items.length > 0 && !isStructuralMatch(items[0], req.body)) {
     return res.status(400).json({
       rejected: 'Invalid payload: keys do not match resource schema',
@@ -25,12 +31,21 @@ export const postCollection = (items: any[]) => (req: Request, res: Response) =>
   }
 
   items.push(req.body);
+  state.set({
+    ...currentState,
+    [name]: items,
+  });
+
   res.status(201).json(req.body);
 };
 
-export const putCollectionItem = (items: any[]) => (req: Request, res: Response) => {
+export const putCollectionItem = (state: Store, name: string) => (req: Request, res: Response) => {
+  const currentState = state.get();
+  const items: Array<any> = currentState[name];
+
   const id = Number(req.params.id);
   const index = items.findIndex((i) => i.id === id);
+
   if (index === -1) return res.status(404).json({ error: 'Item not found' });
 
   if (!isStructuralMatch(items[index], req.body)) {
@@ -42,23 +57,47 @@ export const putCollectionItem = (items: any[]) => (req: Request, res: Response)
   req.body.id = id;
 
   items[index] = req.body;
-  res.json(items[index]);
+  state.set({
+    ...currentState,
+    [name]: items,
+  });
+
+  res.status(201).json(items[index]);
 };
 
-export const patchCollectionItem = (items: any[]) => (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const index = items.findIndex((i) => i.id === id);
-  if (index === -1) return res.status(404).json({ error: 'Item not found' });
+export const patchCollectionItem =
+  (state: Store, name: string) => (req: Request, res: Response) => {
+    const currentState = state.get();
+    const items: Array<any> = currentState[name];
 
-  assignExistingKeys(items[index], req.body);
-  res.json(items[index]);
-};
+    const id = Number(req.params.id);
+    const index = items.findIndex((i) => i.id === id);
+    if (index === -1) return res.status(404).json({ error: 'Item not found' });
 
-export const deleteCollectionItem = (items: any[]) => (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const index = items.findIndex((i) => i.id === id);
-  if (index === -1) return res.status(404).json({ error: 'Item not found' });
+    assignExistingKeys(items[index], req.body);
+    state.set({
+      ...currentState,
+      [name]: items,
+    });
 
-  items.splice(index, 1);
-  res.status(204).send();
-};
+    res.status(201).json(req.body);
+  };
+
+export const deleteCollectionItem =
+  (state: Store, name: string) => (req: Request, res: Response) => {
+    const currentState = state.get();
+    const items: Array<any> = currentState[name];
+
+    const id = Number(req.params.id);
+    const index = items.findIndex((i) => i.id === id);
+    if (index === -1) return res.status(404).json({ error: 'Item not found' });
+
+    items.splice(index, 1);
+
+    state.set({
+      ...currentState,
+      [name]: items,
+    });
+
+    res.status(204).send();
+  };

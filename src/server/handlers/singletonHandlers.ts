@@ -1,21 +1,31 @@
 import { Request, Response } from 'express';
 import { isStructuralMatch, assignExistingKeys } from '../../utils/objectUtils';
 
-export const getSingleton = (data: any, name: string) => (_: Request, res: Response) => {
-  res.json(data[name]);
+import { Store } from 'src/datastore/dataStore';
+
+export const getSingleton = (state: Store, name: string) => (_: Request, res: Response) => {
+  res.json(state.get()[name]);
 };
 
-export const putSingleton = (data: any, name: string) => (req: Request, res: Response) => {
-  if (!isStructuralMatch(data[name], req.body)) {
+export const putSingleton = (state: Store, name: string) => (req: Request, res: Response) => {
+  const currentState = state.get();
+  if (!isStructuralMatch(currentState[name], req.body)) {
     return res.status(400).json({
       rejected: 'Invalid payload: keys do not match resource schema',
     });
   }
-  data[name] = req.body;
-  return res.status(200).json({ received: data[name] });
+  const newData = {
+    ...currentState,
+    [name]: req.body,
+  };
+  state.set(newData);
+  return res.status(200).json({ received: req.body });
 };
 
-export const patchSingleton = (data: any, name: string) => (req: Request, res: Response) => {
+export const patchSingleton = (state: Store, name: string) => (req: Request, res: Response) => {
+  const data = state.get();
+
   assignExistingKeys(data[name], req.body);
+  state.set(data);
   res.status(200).json({ received: data[name] });
 };
