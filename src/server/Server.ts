@@ -16,6 +16,7 @@ export class Server {
     private dataSource: DataSource,
     private port: number,
     private fileName: string,
+    private isWatchEnabled: boolean,
   ) {
     this.app = express();
     this.app.use(express.json());
@@ -35,7 +36,7 @@ export class Server {
     // this.data = rawData;
     this.state.set(rawData);
     this.resourceMap = this.dataSource.parse(this.state.get());
-    this.watchFile();
+    if (this.isWatchEnabled) this.watchFile();
     this.createRoutes();
   }
 
