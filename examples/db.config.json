@@ -1,0 +1,28 @@
+{
+  "/api/users": {
+    "POST": {
+      "delay": 200,
+      "validation": {
+        "requiredFields": ["email", "password"],
+        "errorStatus": 400
+      }
+    },
+    "GET": {
+      "delay": 100
+    }
+  },
+  "/api/login-user": {
+    "POST": {
+      "delay": 500,
+      "validation": {
+        "requiredFields": ["email", "password"],
+        "errorStatus": 401
+      }
+    }
+  },
+  "/api/slow-api": {
+    "GET": {
+      "delay": 5000
+    }
+  }
+}
