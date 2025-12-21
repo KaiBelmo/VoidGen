@@ -1,15 +1,27 @@
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { BehaviorMap, BehaviorConfig } from 'src/types';
+import { getFileName } from '../../utils/getFileName';
 
 export class BehaviorManager {
   private behaviorMap: BehaviorMap = new Map();
+  private configPath!: string;
 
   constructor(configPath: string) {
-    this.loadConfig(configPath);
+    if (this.checkIfLoadFileExists(configPath)) this.loadConfig();
   }
 
-  loadConfig(configPath: string) {
-    const file = readFileSync(configPath, 'utf-8');
+  private checkIfLoadFileExists(filePath: string): boolean {
+    const fileName = getFileName(filePath);
+    const path = `${fileName}.config.json`;
+    if (existsSync(path)) {
+      this.configPath = path;
+      return true;
+    }
+    return false;
+  }
+
+  loadConfig() {
+    const file = readFileSync(this.configPath, 'utf-8');
     const config = JSON.parse(file);
     for (let [route, routeConfig] of Object.entries(config)) {
       const methodMap = new Map<string, BehaviorConfig>();
