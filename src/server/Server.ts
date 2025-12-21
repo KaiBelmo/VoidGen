@@ -3,6 +3,7 @@ import { DataSource } from '../datasource/DataSource';
 import type { ResourceMap } from '../types';
 import * as singletonHandlers from './handlers/singletonHandlers';
 import * as collectionHandlers from './handlers/collectionHandlers';
+import { BehaviorManager } from './route-behaviors/BehaviorManager';
 import { Store } from '../datastore/dataStore';
 import { watch } from 'chokidar';
 
@@ -10,6 +11,7 @@ export class Server {
   private app: Express;
   // private data: any; // In-memory data store
   private resourceMap: ResourceMap;
+  private _behaviorManager?: BehaviorManager;
   private state = new Store<any>();
 
   constructor(
@@ -19,6 +21,7 @@ export class Server {
     private isWatchEnabled: boolean,
   ) {
     this.app = express();
+    this._behaviorManager = new BehaviorManager(fileName);
     this.app.use(express.json());
     this.app.use(this.errorHandler);
     this.initialize();
