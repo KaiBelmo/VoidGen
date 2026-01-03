@@ -1,22 +1,72 @@
 {
-  "/api/users": {
+  "/api/posts": {
+    "GET": {
+      "delay": 100
+    },
     "POST": {
-      "delay": 200,
+      "delay": 300,
       "validation": {
-        "requiredFields": ["email", "password"],
+        "requiredFields": ["title", "author"],
+        "errorStatus": 400
+      }
+    }
+  },
+  "/api/posts/:id": {
+    "GET": {
+      "delay": 120
+    },
+    "PUT": {
+      "delay": 300,
+      "validation": {
+        "requiredFields": ["title", "author"],
         "errorStatus": 400
       }
     },
-    "GET": {
-      "delay": 100
+    "DELETE": {
+      "delay": 150
     }
   },
-  "/api/login-user": {
+  "/api/comments": {
+    "GET": {
+      "delay": 100
+    },
     "POST": {
-      "delay": 500,
+      "delay": 250,
       "validation": {
-        "requiredFields": ["email", "password"],
-        "errorStatus": 401
+        "requiredFields": ["body", "postId"],
+        "errorStatus": 400
+      }
+    }
+  },
+  "/api/comments/:id": {
+    "GET": {
+      "delay": 120
+    },
+    "DELETE": {
+      "delay": 150
+    }
+  },
+  "/api/profile": {
+    "GET": {
+      "delay": 200
+    },
+    "PUT": {
+      "delay": 400,
+      "validation": {
+        "requiredFields": ["name", "age"],
+        "errorStatus": 400
+      }
+    }
+  },
+  "/api/smth": {
+    "GET": {
+      "delay": 100
+    },
+    "PUT": {
+      "delay": 200,
+      "validation": {
+        "requiredFields": ["job"],
+        "errorStatus": 400
       }
     }
   },
