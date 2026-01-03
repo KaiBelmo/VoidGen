@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { BehaviorMap, BehaviorConfig } from 'src/types';
 import { getFileName } from '../../utils/getFileName';
+import type { Request } from 'express';
 
 export class BehaviorManager {
   private behaviorMap: BehaviorMap = new Map();
@@ -31,6 +32,20 @@ export class BehaviorManager {
         }
       }
       this.behaviorMap.set(route, methodMap);
+    }
+  }
+
+  getRouteBehavior(routeName: string): ReadonlyMap<string, BehaviorConfig> | null {
+    return this.behaviorMap.get(routeName) ?? null;
+  }
+
+  getBehaviorOfMethod(req: Request) {
+    switch (req.method) {
+      case 'GET':
+      case 'PUT':
+      case 'PATCH':
+      case 'POST':
+      case 'DELETE':
     }
   }
 }
