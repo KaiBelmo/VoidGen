@@ -37,4 +37,8 @@ export class BehaviorManager {
   getRouteBehavior(routeName: string): MethodBehaviorMap | null {
     return this.behaviorMap.get(routeName) ?? null;
   }
+
+  getConfigPath(): string | null {
+    return this.configPath || null;
+  }
 }

@@ -1,4 +1,5 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
+import { watchFile } from '../utils/fileWatcher';
 import { DataSource } from '../datasource/DataSource';
 import type { MethodBehaviorMap, ResourceMap } from '../types';
 import * as singletonHandlers from './handlers/singletonHandlers';
@@ -7,7 +8,6 @@ import { BehaviorManager } from './route-behaviors/BehaviorManager';
 import { Store } from '../datastore/dataStore';
 import { requestLogger } from './middlewares/requestLogger';
 import { createBehaviorMiddleware } from './middlewares/behaviorMiddleware';
-import { watch } from 'chokidar';
 
 export class Server {
   private app: Express;
@@ -45,12 +45,17 @@ export class Server {
   }
 
   private watchFile() {
-    watch(this.fileName).on('change', (path) => {
-      console.log(`[${path}]: data changed, reloading...`);
+    watchFile(this.fileName, 'data', () => {
       this.state.set(this.dataSource.load());
       this.resourceMap = this.dataSource.parse(this.state.get());
-      console.log(`[${path}]: successfully reloaded.`);
     });
+
+    const behaviorConfigPath = this.behaviorManager.getConfigPath();
+    if (behaviorConfigPath) {
+      watchFile(behaviorConfigPath, 'behavior config', () => {
+        this.behaviorManager.loadConfig();
+      });
+    }
   }
 
   // ResourceMap describes the API / Store owns the data
