@@ -1,16 +1,18 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import { DataSource } from '../datasource/DataSource';
-import type { ResourceMap } from '../types';
+import type { MethodBehaviorMap, ResourceMap } from '../types';
 import * as singletonHandlers from './handlers/singletonHandlers';
 import * as collectionHandlers from './handlers/collectionHandlers';
 import { BehaviorManager } from './route-behaviors/BehaviorManager';
 import { Store } from '../datastore/dataStore';
+import { requestLogger } from './middlewares/requestLogger';
+import { createBehaviorMiddleware } from './middlewares/behaviorMiddleware';
 import { watch } from 'chokidar';
 
 export class Server {
   private app: Express;
   // private data: any; // In-memory data store
-  private resourceMap: ResourceMap;
+  private resourceMap!: ResourceMap;
   private behaviorManager: BehaviorManager;
   private state = new Store<any>();
 
@@ -55,8 +57,11 @@ export class Server {
   private createRoutes() {
     for (const [, resource] of this.resourceMap) {
       const baseRoute = `/api/${resource.name}`;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const routeBehavior = this.behaviorManager.getRouteBehavior(baseRoute);
+      const routeBehavior: MethodBehaviorMap | null = this.behaviorManager.getRouteBehavior(baseRoute);
+
+      const middlewares = [requestLogger(), createBehaviorMiddleware(routeBehavior)];
+
+      this.app.use(baseRoute, ...middlewares);
 
       if (resource.type === 'singleton') {
         const singletonRouter = express.Router();
