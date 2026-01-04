@@ -11,7 +11,7 @@ export class Server {
   private app: Express;
   // private data: any; // In-memory data store
   private resourceMap: ResourceMap;
-  private _behaviorManager?: BehaviorManager;
+  private behaviorManager: BehaviorManager;
   private state = new Store<any>();
 
   constructor(
@@ -21,7 +21,7 @@ export class Server {
     private isWatchEnabled: boolean,
   ) {
     this.app = express();
-    this._behaviorManager = new BehaviorManager(fileName);
+    this.behaviorManager = new BehaviorManager(fileName);
     this.app.use(express.json());
     this.app.use(this.errorHandler);
     this.initialize();
@@ -36,7 +36,6 @@ export class Server {
 
   private initialize() {
     const rawData = this.dataSource.load();
-    // this.data = rawData;
     this.state.set(rawData);
     this.resourceMap = this.dataSource.parse(this.state.get());
     if (this.isWatchEnabled) this.watchFile();
@@ -46,7 +45,6 @@ export class Server {
   private watchFile() {
     watch(this.fileName).on('change', (path) => {
       console.log(`[${path}]: data changed, reloading...`);
-      // this.data = this.dataSource.load();
       this.state.set(this.dataSource.load());
       this.resourceMap = this.dataSource.parse(this.state.get());
       console.log(`[${path}]: successfully reloaded.`);
@@ -57,29 +55,26 @@ export class Server {
   private createRoutes() {
     for (const [, resource] of this.resourceMap) {
       const baseRoute = `/api/${resource.name}`;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const routeBehavior = this.behaviorManager.getRouteBehavior(baseRoute);
+
       if (resource.type === 'singleton') {
-        this.app.get(baseRoute, singletonHandlers.getSingleton(this.state, resource.name));
-        this.app.put(baseRoute, singletonHandlers.putSingleton(this.state, resource.name));
-        this.app.patch(baseRoute, singletonHandlers.patchSingleton(this.state, resource.name));
+        const singletonRouter = express.Router();
+
+        singletonRouter.get('/', singletonHandlers.getSingleton(this.state, resource.name));
+        singletonRouter.put('/', singletonHandlers.putSingleton(this.state, resource.name));
+        singletonRouter.patch('/', singletonHandlers.patchSingleton(this.state, resource.name));
+        this.app.use(baseRoute, singletonRouter);
       } else if (resource.type === 'collection') {
-        this.app.get(baseRoute, collectionHandlers.getCollection(this.state, resource.name));
-        this.app.get(
-          `${baseRoute}/:id`,
-          collectionHandlers.getCollectionItem(this.state, resource.name),
-        );
-        this.app.post(baseRoute, collectionHandlers.postCollection(this.state, resource.name));
-        this.app.put(
-          `${baseRoute}/:id`,
-          collectionHandlers.putCollectionItem(this.state, resource.name),
-        );
-        this.app.patch(
-          `${baseRoute}/:id`,
-          collectionHandlers.patchCollectionItem(this.state, resource.name),
-        );
-        this.app.delete(
-          `${baseRoute}/:id`,
-          collectionHandlers.deleteCollectionItem(this.state, resource.name),
-        );
+        const collectionRouter = express.Router();
+
+        collectionRouter.get('/', collectionHandlers.getCollection(this.state, resource.name));
+        collectionRouter.get('/:id', collectionHandlers.getCollectionItem(this.state, resource.name));
+        collectionRouter.post('/', collectionHandlers.postCollection(this.state, resource.name));
+        collectionRouter.put('/:id', collectionHandlers.putCollectionItem(this.state, resource.name));
+        collectionRouter.patch('/:id', collectionHandlers.patchCollectionItem(this.state, resource.name));
+        collectionRouter.delete('/:id', collectionHandlers.deleteCollectionItem(this.state, resource.name));
+        this.app.use(baseRoute, collectionRouter);
       }
     }
   }
