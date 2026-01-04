@@ -25,3 +25,5 @@ export type Resource =
   | { type: 'collection'; name: string; items: any[] };
 
 export type ResourceMap = Map<string, Resource>;
+
+export type MethodBehaviorMap = ReadonlyMap<string, BehaviorConfig>;
