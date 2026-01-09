@@ -1,4 +1,4 @@
-import { assignExistingKeys, isStructuralMatch } from '../../utils/objectUtils';
+import { assignExistingKeys, isStructuralMatch } from '@/utils/objectUtils';
 describe('objectUtils', () => {
   describe('assignExistingKeys', () => {
     it('should assign only existing keys from source to target', () => {

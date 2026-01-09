@@ -1,4 +1,4 @@
-import type { ResourceMap } from '../types';
+import type { ResourceMap } from '@/types/resource';
 
 export abstract class DataSource {
   protected filePath: string;

@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
-import { BehaviorMap, BehaviorConfig, MethodBehaviorMap } from 'src/types';
-import { getFileName } from '../../utils/getFileName';
+import { BehaviorConfig } from '@/types/behavior';
+import { BehaviorMap, MethodBehaviorMap } from '@/types/map';
+import { getFileName } from '@/utils/getFileName';
 
 export class BehaviorManager {
   private behaviorMap: BehaviorMap = new Map();

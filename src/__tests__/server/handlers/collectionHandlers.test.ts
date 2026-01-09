@@ -6,7 +6,7 @@ import {
   putCollectionItem,
   patchCollectionItem,
   deleteCollectionItem,
-} from '../../../server/handlers/collectionHandlers';
+} from '@/server/handlers/collectionHandlers';
 
 describe('Collection Handlers', () => {
   let mockRequest: Partial<Request>;

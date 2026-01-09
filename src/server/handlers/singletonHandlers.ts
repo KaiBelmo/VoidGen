@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import { isStructuralMatch, assignExistingKeys } from '../../utils/objectUtils';
-
-import { Store } from 'src/datastore/dataStore';
+import { isStructuralMatch, assignExistingKeys } from '@/utils/objectUtils';
+import { Store } from '@/datastore/dataStore';
 
 export const getSingleton = (state: Store, name: string) => (_: Request, res: Response) => {
   res.json(state.get()[name]);

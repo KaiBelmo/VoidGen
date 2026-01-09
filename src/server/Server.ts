@@ -1,13 +1,14 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
-import { watchFile } from '../utils/fileWatcher';
-import { DataSource } from '../datasource/DataSource';
-import type { MethodBehaviorMap, ResourceMap } from '../types';
-import * as singletonHandlers from './handlers/singletonHandlers';
-import * as collectionHandlers from './handlers/collectionHandlers';
-import { BehaviorManager } from './route-behaviors/BehaviorManager';
-import { Store } from '../datastore/dataStore';
-import { requestLogger } from './middlewares/requestLogger';
-import { createBehaviorMiddleware } from './middlewares/behaviorMiddleware';
+import { watchFile } from '@/utils/fileWatcher';
+import { DataSource } from '@/datasource/DataSource';
+import type { MethodBehaviorMap } from '@/types/map';
+import type { ResourceMap } from '@/types/resource';
+import * as singletonHandlers from '@/server/handlers/singletonHandlers';
+import * as collectionHandlers from '@/server/handlers/collectionHandlers';
+import { BehaviorManager } from '@/server/route-behaviors/BehaviorManager';
+import { Store } from '@/datastore/dataStore';
+import { requestLogger } from '@/server/middlewares/requestLogger';
+import { createBehaviorMiddleware } from '@/server/middlewares/behaviorMiddleware';
 
 export class Server {
   private app: Express;

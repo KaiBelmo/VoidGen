@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getSingleton, putSingleton, patchSingleton } from '../../../server/handlers/singletonHandlers';
+import { getSingleton, putSingleton, patchSingleton } from '@/server/handlers/singletonHandlers';
 
 describe('Singleton Handlers', () => {
   let mockRequest: Partial<Request>;

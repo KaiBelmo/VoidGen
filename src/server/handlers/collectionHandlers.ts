@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { isStructuralMatch, assignExistingKeys } from '../../utils/objectUtils';
-import { Store } from 'src/datastore/dataStore';
+import { isStructuralMatch, assignExistingKeys } from '@/utils/objectUtils';
+import { Store } from '@/datastore/dataStore';
 
 export const getCollection = (state: Store, name: string) => (_: Request, res: Response) => {
   const items = state.get()[name];
