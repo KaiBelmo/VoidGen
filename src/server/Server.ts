@@ -63,11 +63,15 @@ export class Server {
   private createRoutes() {
     for (const [, resource] of this.resourceMap) {
       const baseRoute = `/api/${resource.name}`;
+      const itemRoute = `${baseRoute}/:id`;
+
       const routeBehavior: MethodBehaviorMap | null = this.behaviorManager.getRouteBehavior(baseRoute);
+      const itemRouteBehavior: MethodBehaviorMap | null = this.behaviorManager.getRouteBehavior(itemRoute);
 
-      const middlewares = [requestLogger(), createBehaviorMiddleware(routeBehavior)];
+      const baseMiddlewares = [requestLogger(), createBehaviorMiddleware(routeBehavior)];
+      const itemMiddlewares = [requestLogger(), createBehaviorMiddleware(itemRouteBehavior)];
 
-      this.app.use(baseRoute, ...middlewares);
+      this.app.use(baseRoute, ...baseMiddlewares);
 
       if (resource.type === 'singleton') {
         const singletonRouter = express.Router();
@@ -80,12 +84,15 @@ export class Server {
         const collectionRouter = express.Router();
 
         collectionRouter.get('/', collectionHandlers.getCollection(this.state, resource.name));
-        collectionRouter.get('/:id', collectionHandlers.getCollectionItem(this.state, resource.name));
         collectionRouter.post('/', collectionHandlers.postCollection(this.state, resource.name));
-        collectionRouter.put('/:id', collectionHandlers.putCollectionItem(this.state, resource.name));
-        collectionRouter.patch('/:id', collectionHandlers.patchCollectionItem(this.state, resource.name));
-        collectionRouter.delete('/:id', collectionHandlers.deleteCollectionItem(this.state, resource.name));
         this.app.use(baseRoute, collectionRouter);
+
+        const itemRouter = express.Router();
+        itemRouter.get('/', collectionHandlers.getCollectionItem(this.state, resource.name));
+        itemRouter.put('/', collectionHandlers.putCollectionItem(this.state, resource.name));
+        itemRouter.patch('/', collectionHandlers.patchCollectionItem(this.state, resource.name));
+        itemRouter.delete('/', collectionHandlers.deleteCollectionItem(this.state, resource.name));
+        this.app.use(itemRoute, ...itemMiddlewares, itemRouter);
       }
     }
   }
