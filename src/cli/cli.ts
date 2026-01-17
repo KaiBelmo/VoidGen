@@ -1,6 +1,6 @@
 import { Command } from 'commander';
-import type { CliArgs } from '../types';
-import { startApp } from '../index';
+import type { CliArgs } from '@/types/cli';
+import { startApp } from '@/index';
 
 const program = new Command();
 

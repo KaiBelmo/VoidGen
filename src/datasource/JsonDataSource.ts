@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
-import { DataSource } from './DataSource';
-import type { ResourceMap } from '../types';
+import { DataSource } from '@/datasource/DataSource';
+import type { ResourceMap } from '@/types/resource';
 
 export class JsonDataSource extends DataSource {
   load(): any {

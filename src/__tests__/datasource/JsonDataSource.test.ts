@@ -1,4 +1,4 @@
-import { JsonDataSource } from '../../datasource/JsonDataSource';
+import { JsonDataSource } from '@/datasource/JsonDataSource';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 

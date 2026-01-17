@@ -1,15 +1,20 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
-import { DataSource } from '../datasource/DataSource';
-import type { ResourceMap } from '../types';
-import * as singletonHandlers from './handlers/singletonHandlers';
-import * as collectionHandlers from './handlers/collectionHandlers';
-import { Store } from '../datastore/dataStore';
-import { watch } from 'chokidar';
+import { watchFile } from '@/utils/fileWatcher';
+import { DataSource } from '@/datasource/DataSource';
+import type { MethodBehaviorMap } from '@/types/map';
+import type { ResourceMap } from '@/types/resource';
+import * as singletonHandlers from '@/server/handlers/singletonHandlers';
+import * as collectionHandlers from '@/server/handlers/collectionHandlers';
+import { BehaviorManager } from '@/server/route-behaviors/BehaviorManager';
+import { Store } from '@/datastore/dataStore';
+import { requestLogger } from '@/server/middlewares/requestLogger';
+import { createBehaviorMiddleware } from '@/server/middlewares/behaviorMiddleware';
 
 export class Server {
   private app: Express;
   // private data: any; // In-memory data store
-  private resourceMap: ResourceMap;
+  private resourceMap!: ResourceMap;
+  private behaviorManager: BehaviorManager;
   private state = new Store<any>();
 
   constructor(
@@ -19,6 +24,7 @@ export class Server {
     private isWatchEnabled: boolean,
   ) {
     this.app = express();
+    this.behaviorManager = new BehaviorManager(fileName);
     this.app.use(express.json());
     this.app.use(this.errorHandler);
     this.initialize();
@@ -33,7 +39,6 @@ export class Server {
 
   private initialize() {
     const rawData = this.dataSource.load();
-    // this.data = rawData;
     this.state.set(rawData);
     this.resourceMap = this.dataSource.parse(this.state.get());
     if (this.isWatchEnabled) this.watchFile();
@@ -41,42 +46,53 @@ export class Server {
   }
 
   private watchFile() {
-    watch(this.fileName).on('change', (path) => {
-      console.log(`[${path}]: data changed, reloading...`);
-      // this.data = this.dataSource.load();
+    watchFile(this.fileName, 'data', () => {
       this.state.set(this.dataSource.load());
       this.resourceMap = this.dataSource.parse(this.state.get());
-      console.log(`[${path}]: successfully reloaded.`);
     });
+
+    const behaviorConfigPath = this.behaviorManager.getConfigPath();
+    if (behaviorConfigPath) {
+      watchFile(behaviorConfigPath, 'behavior config', () => {
+        this.behaviorManager.loadConfig();
+      });
+    }
   }
 
   // ResourceMap describes the API / Store owns the data
   private createRoutes() {
     for (const [, resource] of this.resourceMap) {
       const baseRoute = `/api/${resource.name}`;
+      const itemRoute = `${baseRoute}/:id`;
+
+      const routeBehavior: MethodBehaviorMap | null = this.behaviorManager.getRouteBehavior(baseRoute);
+      const itemRouteBehavior: MethodBehaviorMap | null = this.behaviorManager.getRouteBehavior(itemRoute);
+
+      const baseMiddlewares = [requestLogger(), createBehaviorMiddleware(routeBehavior)];
+      const itemMiddlewares = [requestLogger(), createBehaviorMiddleware(itemRouteBehavior)];
+
+      this.app.use(baseRoute, ...baseMiddlewares);
+
       if (resource.type === 'singleton') {
-        this.app.get(baseRoute, singletonHandlers.getSingleton(this.state, resource.name));
-        this.app.put(baseRoute, singletonHandlers.putSingleton(this.state, resource.name));
-        this.app.patch(baseRoute, singletonHandlers.patchSingleton(this.state, resource.name));
+        const singletonRouter = express.Router();
+
+        singletonRouter.get('/', singletonHandlers.getSingleton(this.state, resource.name));
+        singletonRouter.put('/', singletonHandlers.putSingleton(this.state, resource.name));
+        singletonRouter.patch('/', singletonHandlers.patchSingleton(this.state, resource.name));
+        this.app.use(baseRoute, singletonRouter);
       } else if (resource.type === 'collection') {
-        this.app.get(baseRoute, collectionHandlers.getCollection(this.state, resource.name));
-        this.app.get(
-          `${baseRoute}/:id`,
-          collectionHandlers.getCollectionItem(this.state, resource.name),
-        );
-        this.app.post(baseRoute, collectionHandlers.postCollection(this.state, resource.name));
-        this.app.put(
-          `${baseRoute}/:id`,
-          collectionHandlers.putCollectionItem(this.state, resource.name),
-        );
-        this.app.patch(
-          `${baseRoute}/:id`,
-          collectionHandlers.patchCollectionItem(this.state, resource.name),
-        );
-        this.app.delete(
-          `${baseRoute}/:id`,
-          collectionHandlers.deleteCollectionItem(this.state, resource.name),
-        );
+        const collectionRouter = express.Router();
+
+        collectionRouter.get('/', collectionHandlers.getCollection(this.state, resource.name));
+        collectionRouter.post('/', collectionHandlers.postCollection(this.state, resource.name));
+        this.app.use(baseRoute, collectionRouter);
+
+        const itemRouter = express.Router();
+        itemRouter.get('/', collectionHandlers.getCollectionItem(this.state, resource.name));
+        itemRouter.put('/', collectionHandlers.putCollectionItem(this.state, resource.name));
+        itemRouter.patch('/', collectionHandlers.patchCollectionItem(this.state, resource.name));
+        itemRouter.delete('/', collectionHandlers.deleteCollectionItem(this.state, resource.name));
+        this.app.use(itemRoute, ...itemMiddlewares, itemRouter);
       }
     }
   }

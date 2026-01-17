@@ -1,7 +1,7 @@
-import type { CliArgs } from './types';
-import { JsonDataSource } from './datasource/JsonDataSource';
-import { Server } from './server/Server';
-import { runCli } from './cli/cli';
+import type { CliArgs } from '@/types/cli';
+import { JsonDataSource } from '@/datasource/JsonDataSource';
+import { Server } from '@/server/Server';
+import { runCli } from '@/cli/cli';
 
 export const startApp = ({ file, port, watch }: CliArgs) => {
   const dataSource = new JsonDataSource(file);
