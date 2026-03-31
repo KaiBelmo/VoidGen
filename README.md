@@ -1,6 +1,7 @@
 # VoidGen - Mock API Server
 
 VoidGen is a lightweight, configurable mock API server that generates RESTful endpoints from JSON and other structured data formats. It is designed for frontend development, testing, rapid prototyping, and any scenario where you need a reliable API without building a full backend.
+
 ## Features
 
 - Instant REST API from JSON files (with additional data formats planned)
@@ -8,6 +9,8 @@ VoidGen is a lightweight, configurable mock API server that generates RESTful en
 - In-memory data store with automatic reload on file changes
 - Full CRUD operations for collection resources
 - Configurable port and data file
+- Watch mode enabled by default for hot reloading data and behavior config
+- Route-level behavior controls for delay, validation, error injection, and rate limiting
 - Tested with Jest
 
 ## Installation
@@ -23,17 +26,13 @@ yarn global add voidgen
 pnpm add -g voidgen
 ```
 
-## Usage
-
-### Basic Usage
+## Quick Start
 
 ```bash
 voidgen --file path/to/your/data.json --port 3000
 ```
 
-### Data File Format
-
-Your JSON data file should follow this structure. While JSON is currently the only supported format, future updates will introduce support for other data and schema formats.
+Example data file:
 
 ```json
 {
@@ -48,17 +47,11 @@ Your JSON data file should follow this structure. While JSON is currently the on
 }
 ```
 
-This will generate the following endpoints:
+Collections become CRUD endpoints and objects become singleton endpoints.
 
-- `GET /api/todos` - Get all todos
-- `GET /api/todos/:id` - Get a specific todo
-- `POST /api/todos` - Create a new todo
-- `PUT /api/todos/:id` - Replace a todo
-- `PATCH /api/todos/:id` - Partially update a todo
-- `DELETE /api/todos/:id` - Delete a todo
-- `GET /api/config` - Get config
-- `PUT /api/config` - Replace config
-- `PATCH /api/config` - Partially update config
+For full usage details, see:
+
+- [USAGE.md](./USAGE.md)
 
 ## Development
 
@@ -102,7 +95,6 @@ VoidGen is actively evolving. Planned enhancements include:
 - REST API generation from **OpenAPI** specifications  
 - REST API generation from **TypeScript interfaces**  
 - Automatic random/mock data generation  
-- Advanced route-level behavior (latency, error injection, rate limiting)  
 - Persistent storage options (file or SQLite)  
 - Relationship modeling between resources  
 - Web interface for browsing and editing data  
