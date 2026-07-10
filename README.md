@@ -2,6 +2,8 @@
 
 VoidGen is a lightweight, configurable mock API server that generates RESTful endpoints from JSON and other structured data formats. It is designed for frontend development, testing, rapid prototyping, and any scenario where you need a reliable API without building a full backend.
 
+This project originated from a 2023 internship. I've decided to open source it in the hope that it may be useful to others, and I may continue working on it in the future. Contributions are welcome!
+
 ## Features
 
 - Instant REST API from JSON files (with additional data formats planned)
